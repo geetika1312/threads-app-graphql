@@ -13,52 +13,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const server_1 = require("@apollo/server");
 const express4_1 = require("@apollo/server/express4");
-const db_1 = require("./lib/db"); // Updated import statement
+const graphql_1 = __importDefault(require("./graphql"));
 function init() {
     return __awaiter(this, void 0, void 0, function* () {
         const app = (0, express_1.default)();
         const PORT = Number(process.env.PORT) || 8000;
         app.use(express_1.default.json());
-        // Create Graphql Server
-        const gqlServer = new server_1.ApolloServer({
-            typeDefs: `         
-            type Query {
-                hello: String
-                say(name: String): String
-            }
-            type Mutation {
-                createUser(firstName: String!, lastName: String!, email: String!, password: String!): Boolean
-            }
-        `, //Schema
-            resolvers: {
-                Query: {
-                    hello: () => `Hey there, I am a graphql server`,
-                    say: (_, { name }) => `Hey ${name}, How are you?`,
-                },
-                Mutation: {
-                    createUser: (_, { firstName, lastName, email, password }) => __awaiter(this, void 0, void 0, function* () {
-                        yield db_1.prismaClient.user.create({
-                            data: {
-                                email,
-                                firstName,
-                                lastName,
-                                password,
-                                salt: "random_salt",
-                                profileImageURL: "default_profile_image_url" // provide a default value or null if appropriat
-                            },
-                        });
-                        return true;
-                    }),
-                },
-            },
-        });
-        // Start the gql server
-        yield gqlServer.start();
         app.get('/', (req, res) => {
             res.json({ message: 'Server is up and running' });
         });
+        const gqlServer = yield (0, graphql_1.default)();
         app.use("/graphql", (0, express4_1.expressMiddleware)(gqlServer));
         app.listen(PORT, () => console.log(`Server started at PORT:${PORT}`));
     });
